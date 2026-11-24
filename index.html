@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Los 49 errores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+/* Concepto: un camino de noche con 18 farolas. Cada nivel superado enciende una farola y el cielo se acerca al amanecer. */
+:root {
+  --bg: #100d27;
+  --panel: #1b1640;
+  --panel2: #261f57;
+  --ink: #f4ecda;
+  --muted: #a9a4d4;
+  --warm: #ffbd6e;
+  --blue: #59c0f2;
+  --red: #e04a5f;
+  --line: #3b3278;
+  --shadow: #0a0820;
+  --head: 'Press Start 2P', ui-monospace, Menlo, Consolas, monospace;
+  --body: 'VT323', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 22px/1.3 var(--body);
+  padding-block: 14px 28px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.app { max-width: 920px; margin: 0 auto; display: grid; gap: 16px; }
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.brand { font: 11px/1.5 var(--head); color: var(--warm); }
+.top-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+#prog { color: var(--muted); font-size: 21px; }
+canvas#scene {
+  display: block; width: 100%; aspect-ratio: 2 / 1; height: auto;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  background: #0b1030; border: 3px solid var(--line); box-shadow: 6px 6px 0 var(--shadow);
+}
+.panel { background: var(--panel); border: 3px solid var(--line); box-shadow: 6px 6px 0 var(--shadow); padding: 20px 20px 22px; min-width: 0; }
+.panel > * + * { margin-top: 14px; }
+h1 { font: 16px/1.6 var(--head); margin: 0; color: var(--ink); }
+h2 { font: 13px/1.7 var(--head); margin: 0; color: var(--ink); }
+p { margin: 0; }
+.kicker { font: 9px/1.7 var(--head); color: var(--warm); }
+.label { font: 9px/1.7 var(--head); color: var(--muted); margin-bottom: 6px; }
+.lead { font-size: 25px; max-width: 34em; }
+.q { margin: 8px 0 0; padding-left: 12px; border-left: 4px solid var(--blue); font-size: 23px; max-width: 40em; }
+.q .n { color: var(--blue); }
+.quote.muted .q { opacity: .62; }
+.answer p { font-size: 25px; max-width: 40em; }
+.answer p + p { margin-top: 12px; }
+.promise ul { list-style: none; margin: 0; padding: 0; }
+.promise li { position: relative; padding-left: 24px; margin: 9px 0; font-size: 24px; max-width: 40em; }
+.promise li::before { content: ""; position: absolute; left: 0; top: .42em; width: 11px; height: 11px; background: var(--warm); box-shadow: 0 0 0 3px #5b4320; }
+.letter p { font-size: 26px; max-width: 36em; }
+.letter p + p { margin-top: 14px; }
+.sign { margin-top: 18px; color: var(--warm); }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.btn {
+  font: 10px/1.5 var(--head); color: var(--ink); background: var(--panel2);
+  border: 3px solid var(--line); padding: 13px 15px; cursor: pointer; box-shadow: 4px 4px 0 var(--shadow);
+}
+.btn.primary { background: var(--warm); color: #1c1232; border-color: #ffdca8; }
+.btn.small { padding: 8px 10px; font-size: 9px; }
+.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--shadow); }
+.btn[disabled] { opacity: .5; cursor: default; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.reveal { animation: fade .5s ease both; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .reveal { animation: none; } }
+.walking { color: var(--muted); }
+@media (max-width: 520px) {
+  body { font-size: 21px; }
+  h1 { font-size: 13px; }
+  .panel { padding: 16px 14px 18px; }
+  .q { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="top">
+    <span class="brand">LOS 49 ERRORES</span>
+    <div class="top-right">
+      <span id="prog" aria-live="polite"></span>
+      <button class="btn small" id="musicBtn" type="button" aria-pressed="false">♪ Música: no</button>
+    </div>
+  </div>
+  <canvas id="scene" width="200" height="100" role="img" aria-label="María y él caminando de noche por un camino con farolas. Cada farola es un nivel."></canvas>
+  <main class="panel" id="panel"></main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ================= CONTENIDO (editable) ================= */
+
+  // Cosas concretas que valoras de ella. Mientras esté vacía, esa pantalla se omite.
+  var VALORES = [];
+
+  // Carta final.
+  var CARTA = [
+    "María,",
+    "Pasé por cada error de tu lista, uno por uno. Quise responder con la verdad, incluso cuando no me dejaba bien parado. En algunos te dije todo lo que reconozco, en otros te conté cómo lo recuerdo yo, y en todos traté de no discutir lo que tú sentiste, porque eso es lo que más importa.",
+    "Tú eres muy importante para mí. Eres la mujer de mis sueños y la que amo de verdad, y me siento mal de no haberte valorado como mereces.",
+    "No te pido que me creas hoy. Estoy cambiando, principalmente por mí, porque quiero ser mejor persona, y también para que, si algún día quieres, puedas ver con hechos lo que hoy solo puedo decirte con palabras. Me falta mucho, y lo sé.",
+    "Quiero estar en todos tus días especiales, y también en los normales. Perdóname por haberme dado cuenta tan tarde."
+  ];
+  var FIRMA = "";
+
+  // Lo que ella escribió, tal cual.
+  var E = {
+    1: "Tener detalles con mi mejor amiga y conmigo no.",
+    2: "Haber tenido iniciativa para salir con mi amiga cuando a mí me ponía excusas o le daba pereza.",
+    3: "Decirme que le daba pereza ir a mis 15, cuando dejé de invitar personas por invitarlo a él, y encima se la pasó todo el día con la misma amiga.",
+    4: "Decirme en mi cara que mi amiga es más linda que yo.",
+    5: "Haberse acostado con la primera que encontró después de haber terminado.",
+    6: "Darle hasta el más mínimo detalle a todas sus amigas y ni a mí un chicle.",
+    7: "Abandonarme varias veces.",
+    8: "Decirme que mis amigas le parecen lindas o atractivas.",
+    9: "Haber sido un lambón y halagar mucho a la misma amiga frente a mí, mientras conmigo no era tan así.",
+    10: "Que lo único que me gastó en su miserable vida me dijera de compartirlo con la misma amiga a la que siempre le daba todo.",
+    11: "Que cuando peleamos, a mí no me dio nada y a esa amiga sí.",
+    12: "Haberme pasado por encima y haberme mentido para estar con la misma amiga.",
+    13: "Decirme que sus mejores planes para un día muy importante de mi vida eran llevarme a un lugar que no era para la ocasión y solo porque era lo que él quería.",
+    14: "Haberme dejado completamente sola por acompañar a su amiga, dejándome ahí botada y sin nadie.",
+    15: "Haber subido fotos y destacarlas por todos lados de famosas con IA de manera sugerente, sabiendo que estaba recuperándome.",
+    16: "Mentirme siempre, pero siempre, incluso ahora.",
+    17: "Ser un hombre falso con tal de no perderme.",
+    18: "Siempre meterse con personas que le gustaron antes después de no estar juntos.",
+    19: "Contarle todo a la misma amiga, pero absolutamente todo, sabiendo que esa amiga podría contar esas cosas.",
+    20: "Hacerme sentir humillada porque no fui la única que notó que a la otra le daban regalos, siendo yo su ligue y no me daban nada.",
+    21: "Haber sido el peor hombre que conocí en toda mi vida.",
+    22: "Hacerse el sufrido durante mucho tiempo pensando que era que no lo habían elegido, cuando él solo fue el que dañó todo.",
+    23: "Apenas terminar, haber desbloqueado a todas las que no me gustaban por obvias razones para volverles a hablar o escribir.",
+    24: "Ser tu único gusto y que para conquistar al inicio jamás le dieras absolutamente nada, ni un papel.",
+    25: "Literalmente valorar a todo el mundo en tu vida menos a mí.",
+    26: "Dejarme fuera de planes tuyos.",
+    27: "No pensar en mí ni siquiera para lo que me da tranquilidad o me hace feliz.",
+    28: "Cuando empezó algo conmigo y estando conmigo, realmente me dijo que no superaba a su ex, Laura.",
+    29: "Seguir puras cuentas de mujeres que ni conoce, nada más por morbosearlas o solo por lindas.",
+    30: "Darle likes a las amiguitas.",
+    31: "Querer hacer las cosas bien cuando ya es mil años tarde.",
+    32: "Estar súper mal por lo que hiciste en el pasado, pero cuando lo hacías lo disfrutabas mucho más; ni eso ni te importaba.",
+    33: "Herir mis sentimientos sin importarte nunca en años ni un culito.",
+    34: "Ser desleal.",
+    35: "Decirme que no me debías nada porque no éramos novios.",
+    36: "Halagar a su amiga varias veces enfrente de mí.",
+    37: "Que me haya dejado de hablar desde antes y que me dejara los mensajes ahí, pero mientras eso pasaba estaba hablando con su amiga.",
+    38: "Literalmente, una de las razones por las que te odio tanto, de tantas que hay, es que me hiciste dar inseguridad con el tema de las amigas, sabiendo que no me importaba eso.",
+    39: "Creer que ha cambiado, cuando querer cambiar y haber cambiado son dos cosas muy diferentes.",
+    40: "Siempre pensar en mí después de sus acciones y cagadas, pero nunca antes.",
+    41: "Actualmente darle oportunidades para que no haga cagadas y las siga haciendo.",
+    42: "Que cuando eliminé a alguien de su vida por mí, ni lo hace bien, pero cuando se trata de él y porque le nace, ahí sí lo hace bien y se excusa con que son situaciones diferentes, cuando la misma acción es la misma.",
+    43: "Que siempre ponga excusas para todo en vez de reconocer su realidad.",
+    44: "Que todos los detalles que me dé sean tan falsos porque solo son detalles de un hombre que nunca pudo hacer las cosas bien y apenas intentó hacer lo mínimo ahora.",
+    45: "Haber hecho comentarios despectivos de mi físico y frente a otras personas.",
+    46: "No solo hablar mal de mí físicamente frente a otros, sino también dejarme muy claro que no encajo con sus gustos en mi cara.",
+    47: "Me has mentido con tantas cosas que es imposible creerte y pierdes toda palabra y confianza."
+  };
+
+  var LEVELS = [
+    { ids: [1],
+      answer: ["Me cerré a lo que teníamos y le di a otras personas lo que a ti no. No fue falta de amor, fue que no supe dejarlo entrar. Y tú viste todo eso y te sentiste menos. Tenías razón en sentirte mal."],
+      promises: ["Los detalles, las salidas y el tiempo son primero para ti.", "Si hago un detalle con alguien más, tú lo sabes y no te enteras después."] },
+    { ids: [2],
+      answer: ["Cuando tú me proponías un plan, yo ponía excusas o me daba pereza. Con mis amigas sí tenía iniciativa. No sé bien por qué lo hice, solo sé que me cerré a vivir esas experiencias contigo. Y eso te dejó con la duda de por qué con ellas sí y contigo no. Esa duda nunca debiste tenerla."],
+      promises: ["Cuando me propongas un plan, voy a decir que sí o a proponer otra opción, no a poner excusas.", "Voy a ser yo quien proponga planes contigo, no solo quien responde.", "Eres mi prioridad en cualquier plan."] },
+    { ids: [3],
+      answer: ["Ese día era tuyo y debí poner todo mi empeño en ti. Dejaste de invitar a personas por invitarme a mí, y yo terminé hablando con Skarleth mientras tú esperabas. Tenía pena de tu familia y me sentía incómodo, pero eso no justifica nada. Aunque yo no lo sintiera como pereza, a ti te hizo sentir que no me importaba, y un día así no se repite."],
+      promises: ["En los días importantes para ti voy a estar presente de principio a fin, aunque me dé pena o me sienta incómodo.", "Si algo me incomoda, te lo voy a decir a ti en vez de alejarme o buscar a otra persona.", "Tú eres muy importante para mí y quiero estar en todos tus días especiales."] },
+    { ids: [4, 8, 45, 46],
+      answer: ["Hay cosas que dije sobre tu físico y sobre tus amigas que te hicieron sentir menos. No recuerdo haber dicho todo lo que escribiste, pero sí recuerdo haber llamado atractiva a Skarleth. No lo dije con ninguna intención, solo quise decir que era linda, pero entiendo cómo te sonó, sobre todo después de lo que ya te había hecho sentir. Perdóname por eso y por cómo lo dije. Tu físico me ha gustado desde siempre y para mí eres la mujer de mis sueños."],
+      promises: ["No voy a compararte con nadie, y no voy a comentarte lo lindas o atractivas que me parecen otras mujeres. Ni en broma."] },
+    { ids: [5],
+      answer: ["Después de terminar, sentí un vacío y lo manejé de la peor manera: me acosté con alguien. No fue tu culpa, fue una decisión mía. Fue una experiencia fea que no quiero repetir, y me arrepiento. Sé que saberlo te dolió, y que no debí hacerlo así, tan pronto, sin pensar en ti. Intenté llenar con otras personas algo que no se llena así, y no me trajo nada bueno.",
+               "Esto me enseñó que no quiero volver a ser esa persona. No te pido que me creas porque lo digo: te lo voy a demostrar con lo que haga."],
+      promises: ["Voy a trabajar en entender por qué reacciono así, para no repetirlo con nadie."] },
+    { ids: [6, 10, 11, 20],
+      answer: ["A mis amigas les di detalles y a ti no. Ni cuando peleamos, ni cuando era tu ligue, ni cuando viste que a otra le daban regalos y a ti nada. Te quería, pero no pude darte ni una sola cosa, y no sé bien por qué. Lo que sí sé es que te hizo sentir humillada y menos importante. Que yo no lo entendiera no cambia lo que sentiste tú.",
+               "Ya no regalo cosas por impulso, ni porque me sienta mal por dentro. Y aun así, eso no justifica nada: tú merecías muchísimo más."],
+      promises: ["Voy a darte detalles a ti primero, pequeños o grandes, sin esperar una fecha especial."] },
+    { ids: [7, 14, 37],
+      answer: ["Cuando me sentía abrumado o mal, quería huir, y varias veces lo hice. Te dejé sola, te dejé mensajes sin responder y me alejé justo cuando más me necesitabas. Me arrepiento muchísimo: debí estar para ti también. Que yo no supiera manejarlo no cambia que tú te quedaste sola."],
+      promises: ["Cuando me sienta abrumado o mal, no voy a correr: me quedo a tu lado y te lo digo."] },
+    { ids: [9, 36],
+      answer: ["Halagué a Skarleth varias veces delante de ti, y contigo no era así. No sé bien por qué lo hice, quizá por atención, pero no tiene justificación. La persona que yo amaba y que me gustaba eras tú, y a ti te hice sentir mal justo cuando más debía cuidarte. No estuvo bien poner a Skarleth como prioridad.",
+               "Tú eres la que amo de verdad. No hay mujer más linda, más hermosa ni más importante para mí en toda mi vida."],
+      promises: ["Los halagos que tengo para dar, primero se los voy a decir a ti.", "No voy a halagar a otras mujeres delante de ti de una forma que te haga sentir menos."] },
+    { ids: [12, 16, 17, 47],
+      answer: ["Te mentí para evitar los problemas, también con lo de Skarleth, pensando que así no te perdería. Fue egoísta y estúpido, y me hizo perder justo lo que quería cuidar. Incluso después, el miedo a perderte me hizo seguir evitando la verdad. Tú mereces siempre la verdad, sin importar lo que sea. Sé que es difícil creerme, y no te lo voy a pedir: lo voy a ganar diciéndotela, aunque duela."],
+      promises: ["Te voy a decir la verdad, aunque duela, y si hay un problema lo hablamos juntos."] },
+    { ids: [13, 26, 27],
+      answer: ["Dije que quería ir a un McDonald's el día de tu graduación, y lo dije de forma inocente. En ese momento yo estaba imaginando un futuro contigo, algo que antes no hacía porque me daba miedo. Pero ese día era tuyo y debí preguntarte qué querías tú, no decidir yo. Tienes razón en sentirte así. Quiero pensar mucho más en lo que te da tranquilidad y te hace feliz, y dejar de hacer planes sin ti."],
+      promises: ["Antes de decidir un plan importante, te voy a preguntar qué quieres tú, y lo armamos juntos.", "Voy a aprender qué te da tranquilidad y felicidad, y lo voy a tener en cuenta en mis planes."] },
+    { ids: [15, 29, 30],
+      answer: ["Mientras intentaba recuperarte, subí una foto mía con tres chicas por una tendencia, y fue de muy mal gusto. Seguir cuentas de mujeres solo por lindas fue una tontería mía, de hace mucho, y ya no lo hago. Y aunque darles likes a mis amigas no era por nada malo, entiendo que a ti te dolía verlo, y eso era lo que importaba. No se va a repetir."],
+      promises: ["No voy a seguir ni a buscar cuentas de mujeres por lindas, ni a subir cosas pensando en llamar la atención de otras.", "Si algo de mis redes te incomoda, me lo dices y lo hablamos, sin que tengas que explicarte tanto."] },
+    { ids: [18, 23, 28],
+      answer: ["Después de terminar, desbloqueé a personas y volví a hablar con otras que me habían gustado antes. Con la persona con la que me acosté, ella me escribió primero y yo no la busqué, pero yo fui quien decidió seguir. Todo eso salió de mis vacíos y de manejar todo de forma incoherente, y no debí hacerlo.",
+               "Sobre mi ex: lo que dije de no superarla lo dije antes de estar contigo, y cuando estuve contigo ya lo había superado. Pero entiendo que lo escucharas justo cuando empezábamos, y que te hiciera sentir que no eras suficiente."],
+      promises: ["No voy a volver a hablar con personas de mi pasado de una forma que te haga sentir insegura. Las personas de mi pasado se quedan ahí, y las que están fuera de mi vida también."] },
+    { ids: [19, 38],
+      answer: ["Le conté cosas nuestras a mi mejor amiga, Campo. Confío en que ella no las contaría, pero lo de nosotros era nuestro, y a ti te hizo sentir expuesta. Y con el tema de las amigas, te hice sentir insegura, cuando no tenías por qué. Perdóname por eso. Quiero cambiar para que te sientas segura en todo."],
+      promises: ["Lo nuestro es de nosotros dos: no voy a contarle a nadie más lo que pasa entre tú y yo.", "Voy a cuidar que te sientas segura con mis amigas y mis amigos, y si algo te inquieta lo hablamos."] },
+    { ids: [24, 25],
+      answer: ["Al inicio no te conquisté con detalles, y después no te valoré como mereces. Me cerré porque sentía que todo iba a terminar y que saldría lastimado, y no te dejé entrar, aunque sí sentía amor por ti. Ese miedo era mío, no tuyo, y lo pagaste tú. Eres una mujer espectacular y no supe valorarlo."],
+      promises: ["Cuando el miedo a salir lastimado aparezca, te lo voy a decir en vez de cerrarme.", "Voy a decirte y a mostrarte cada día lo que valoro de ti."] },
+    { ids: [33, 34, 35],
+      answer: ["Te dije que no te debía nada porque no éramos novios, y lo dije como broma, pero no debí hacerlo. Tú sabes que te debo todo; yo no supe demostrarlo, ni hacerlo contigo como lo hice con otras personas. Te herí, y aunque sí me importabas, corrí sin mirar atrás y me cerré a todo lo que podía ver de ti desde lejos. Después fui desleal por mis vacíos. Que me importaras no cambia que lo que hice se sintió como si no."],
+      promises: ["Si me equivoco contigo, no voy a correr: voy a quedarme, mirarte a los ojos y reparar lo que hice.", "Voy a demostrarte con hechos lo que valoro de ti, no solo con palabras."] },
+    { ids: [21, 22],
+      answer: ["Si para ti fui el peor hombre que conociste, lo entiendo: no hice lo suficiente por ti, y no veía las cosas como las veo hoy. Durante mucho tiempo no me di cuenta de que el que dañó todo fui yo, ni de cómo fallé contigo. Perdóname."],
+      promises: ["Cuando me equivoque, voy a hacerme cargo de lo que dañé, sin hacerme la víctima."] },
+    { ids: [31, 32, 39, 44],
+      answer: ["Tienes razón: quiero hacer las cosas bien y llego tarde, pero prefiero llegar tarde que quedarme sin hacer nada. Lo que hice en el pasado no lo disfrutaba; no era consciente de lo que era, y eso no lo justifica. Tal vez he cambiado, pero me falta mucho. Mis detalles te parecen falsos, y lo entiendo. Para mí no lo son: me nacen, me gusta dártelos, los hago de corazón y te amo. No te pido que me creas hoy. Perdóname por haberme dado cuenta tan tarde."],
+      promises: ["No te voy a pedir que me creas: voy a demostrarte el cambio con hechos, el tiempo que haga falta.", "Voy a seguir mejorando aunque ya no me lo pidas, principalmente por mí, porque quiero ser mejor persona."] },
+    { ids: [40, 41, 42, 43],
+      answer: ["Pensé en ti después de mis errores y no antes. No es que no lo sintiera, me di cuenta tarde, y hoy tengo cada error presente para no repetirlo. Cuando me pediste que alejara a alguien, no lo hice bien; con Skarleth sí la alejé de mi vida, pero dejé su cuenta del negocio y lo vi normal. Hoy entiendo que era la misma acción, y que para ti no era diferente. Ella ya está fuera de mi vida. Y si puse excusas en vez de reconocer mi realidad, perdóname: mi realidad ya la sé.",
+               "Me diste oportunidades para no volver a fallarte, y yo las desperdicié con mentiras. Estuvo muy mal pensar así."],
+      promises: ["Lo que me pediste lo cumplo: si algo de mi entorno te incomoda, lo corto o lo hablamos juntos.", "Cuando me equivoque, no voy a poner excusas: voy a reconocerlo de una vez."] }
+  ];
+  var N = LEVELS.length;
+
+  /* ================= UTILIDADES ================= */
+
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function listEs(a) { return a.length < 2 ? String(a[0]) : a.slice(0, -1).join(', ') + ' y ' + a[a.length - 1]; }
+  var reduce = false;
+  try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+  var SAVE_KEY = 'los49errores-v1';
+  function loadSave() { try { var s = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'); return (s && typeof s.done === 'number') ? s.done : 0; } catch (e) { return 0; } }
+  function writeSave(n) { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ done: n })); } catch (e) {} }
+
+  /* ================= ESTADO ================= */
+
+  var state = { mode: 'title', done: 0, cur: 0, step: 0, charX: 0, target: 0, targetIdx: 0, walkT: 0, endStep: 0, paused: false };
+  var panel = document.getElementById('panel');
+  var progEl = document.getElementById('prog');
+
+  function stationX(k) { return 90 + k * 110; }
+
+  function updateHeader() {
+    if (state.mode === 'title') progEl.textContent = '';
+    else if (state.mode === 'end') progEl.textContent = 'Final del camino';
+    else progEl.textContent = 'Parada ' + Math.min(state.cur + 1, N) + ' de ' + N;
+  }
+
+  /* ================= PANEL ================= */
+
+  function scrollToPanel(el) {
+    try { (el || panel).scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' }); } catch (e) {}
+  }
+
+  function renderTitle() {
+    var saved = loadSave();
+    var html = '<p class="kicker">Para María</p>' +
+      '<h1>Los 49 errores</h1>' +
+      '<p class="lead">Escribiste 47 errores en tu lista y dejaste vacíos el 48 y el 49. Aquí los recorremos uno por uno, caminando. En cada parada lees lo que escribiste, lo que respondo y lo que prometo.</p>' +
+      '<p class="lead">Puedes parar cuando quieras. Seguir caminando no significa perdonar nada.</p>' +
+      '<div class="actions">';
+    if (saved > 0 && saved <= N) html += '<button class="btn primary" data-act="continue" type="button">Seguir donde quedé</button><button class="btn" data-act="start" type="button">Empezar de nuevo</button>';
+    else html += '<button class="btn primary" data-act="start" type="button">Empezar</button>';
+    html += '</div><p class="label">Hay música suave. La activas arriba, cuando quieras.</p>';
+    panel.innerHTML = html;
+    updateHeader();
+  }
+
+  function renderWalking() {
+    var n = state.targetIdx < N ? 'Siguiente parada: ' + (state.targetIdx + 1) + ' de ' + N + '.' : 'Ya casi llegamos al final del camino.';
+    panel.innerHTML = '<p class="walking reveal">Caminando… ' + n + '</p>';
+    updateHeader();
+  }
+
+  function levelHtml() {
+    var L = LEVELS[state.cur];
+    var s = state.step;
+    var kick = 'Parada ' + (state.cur + 1) + ' de ' + N + ' · ' + (L.ids.length > 1 ? 'Errores ' : 'Error ') + listEs(L.ids);
+    var h = '<p class="kicker">' + esc(kick) + '</p>';
+    h += '<section class="quote' + (s > 0 ? ' muted' : '') + '"><p class="label">Lo que escribiste</p>' +
+      L.ids.map(function (n) { return '<p class="q"><span class="n">' + n + '.</span> ' + esc(E[n]) + '</p>'; }).join('') + '</section>';
+    if (s >= 1) h += '<section class="answer' + (s === 1 ? ' reveal' : '') + '" id="ans"><p class="label">Lo que respondo</p>' + L.answer.map(function (t) { return '<p>' + esc(t) + '</p>'; }).join('') + '</section>';
+    if (s >= 2) h += '<section class="promise reveal" id="prm"><p class="label">Lo que prometo</p><ul>' + L.promises.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></section>';
+    var btn = s === 0 ? 'Leer mi respuesta' : (s === 1 ? 'Lo que prometo' : 'Seguir caminando');
+    h += '<div class="actions"><button class="btn primary" data-act="next" type="button">' + btn + '</button><button class="btn" data-act="pause" type="button">Necesito parar un momento</button></div>';
+    return h;
+  }
+
+  function renderLevel() {
+    panel.innerHTML = levelHtml();
+    updateHeader();
+    var target = state.step === 1 ? document.getElementById('ans') : (state.step === 2 ? document.getElementById('prm') : panel);
+    scrollToPanel(target);
+  }
+
+  function renderPause() {
+    panel.innerHTML = '<h2>Está bien.</h2><p class="lead">Esto no tiene prisa. Tu avance queda guardado en este dispositivo y puedes volver cuando quieras.</p><div class="actions"><button class="btn primary" data-act="resume" type="button">Seguir desde aquí</button></div>';
+  }
+
+  function endScenes() {
+    var s = ['doors'];
+    if (VALORES.length) s.push('values');
+    s.push('letter');
+    return s;
+  }
+
+  function renderEnd() {
+    var scenes = endScenes();
+    var sc = scenes[state.endStep];
+    var last = state.endStep === scenes.length - 1;
+    var h = '';
+    if (sc === 'doors') {
+      h = '<p class="kicker">Errores 48 y 49</p><h2>Las dos puertas</h2>' +
+        '<p class="lead">Tú los dejaste vacíos y yo no los llené. Son tuyos. Si algún día quieres escribir algo ahí, o dejarlos vacíos, está bien.</p>';
+    } else if (sc === 'values') {
+      h = '<p class="kicker">Lo que veo en ti</p><h2>Lo que valoro de ti</h2><section class="promise"><ul>' + VALORES.map(function (v) { return '<li>' + esc(v) + '</li>'; }).join('') + '</ul></section>';
+    } else {
+      h = '<p class="kicker">Al final del camino</p><h2>Para ti</h2><section class="letter">' + CARTA.map(function (t) { return '<p>' + esc(t) + '</p>'; }).join('') + (FIRMA ? '<p class="sign">' + esc(FIRMA) + '</p>' : '') + '</section>';
+    }
+    h += '<div class="actions">' + (last ? '<button class="btn" data-act="restart" type="button">Recorrerlo otra vez desde el principio</button>' : '<button class="btn primary" data-act="endnext" type="button">Seguir</button>') + '</div>';
+    panel.innerHTML = h;
+    updateHeader();
+    scrollToPanel(panel);
+  }
+
+  /* ================= FLUJO ================= */
+
+  function startWalk(idx) {
+    state.mode = 'walking';
+    state.targetIdx = idx;
+    state.target = idx < N ? stationX(idx) : stationX(N) - 4;
+    state.cur = Math.min(idx, N - 1);
+    state.walkT = 0;
+    state.paused = false;
+    renderWalking();
+    if (reduce) { state.charX = state.target; arrive(); }
+  }
+
+  function arrive() {
+    if (state.targetIdx < N) {
+      state.mode = 'dialog'; state.step = 0; state.cur = state.targetIdx;
+      renderLevel();
+    } else {
+      state.mode = 'end'; state.endStep = 0;
+      renderEnd();
+    }
+  }
+
+  function finishLevel() {
+    state.done = Math.max(state.done, state.cur + 1);
+    writeSave(state.done);
+    chime();
+    startWalk(state.cur + 1);
+  }
+
+  panel.addEventListener('click', function (ev) {
+    var b = ev.target.closest ? ev.target.closest('[data-act]') : null;
+    if (!b) return;
+    var a = b.getAttribute('data-act');
+    if (a === 'start') { state.done = 0; writeSave(0); state.charX = 0; startWalk(0); }
+    else if (a === 'continue') { state.done = loadSave(); state.charX = Math.max(0, stationX(Math.min(state.done, N)) - 110); startWalk(Math.min(state.done, N)); }
+    else if (a === 'next') { if (state.step < 2) { state.step++; renderLevel(); } else finishLevel(); }
+    else if (a === 'pause') { state.paused = true; renderPause(); }
+    else if (a === 'resume') { state.paused = false; renderLevel(); }
+    else if (a === 'endnext') { state.endStep++; renderEnd(); }
+    else if (a === 'restart') { state.done = 0; writeSave(0); state.mode = 'title'; state.charX = 0; renderTitle(); }
+  });
+
+  /* ================= MÚSICA ================= */
+
+  var ac = null, master = null, musicOn = false, mTimer = null, nextT = 0, stepN = 0;
+  var CH = [
+    { b: 45, t: [57, 60, 64, 69] },
+    { b: 41, t: [53, 57, 60, 65] },
+    { b: 48, t: [55, 60, 64, 67] },
+    { b: 43, t: [55, 59, 62, 67] }
+  ];
+  var PAT = [0, 1, 2, 3, 2, 1, 2, 3];
+  var STEP_S = 60 / 66 / 2;
+  function mtof(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+  function tone(type, f, t0, dur, vol) {
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(master);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function schedule() {
+    if (!ac) return;
+    while (nextT < ac.currentTime + 0.6) {
+      var bar = Math.floor(stepN / 8) % 4, k = stepN % 8, c = CH[bar];
+      tone('square', mtof(c.t[PAT[k]]), nextT, STEP_S * 1.6, 0.022);
+      if (k === 0 || k === 4) tone('triangle', mtof(c.b), nextT, STEP_S * 3.6, 0.07);
+      if (k === 0 && bar % 2 === 1) tone('sine', mtof(c.t[3] + 12), nextT + STEP_S, STEP_S * 5, 0.03);
+      nextT += STEP_S; stepN++;
+    }
+  }
+  function setMusic(on) {
+    var btn = document.getElementById('musicBtn');
+    try {
+      if (on) {
+        if (!ac) {
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          ac = new AC(); master = ac.createGain(); master.gain.value = 0.9; master.connect(ac.destination);
+        }
+        if (ac.resume) ac.resume();
+        nextT = ac.currentTime + 0.1;
+        if (!mTimer) mTimer = setInterval(schedule, 150);
+        musicOn = true;
+      } else {
+        musicOn = false;
+        if (mTimer) { clearInterval(mTimer); mTimer = null; }
+        if (ac && ac.suspend) ac.suspend();
+      }
+    } catch (e) { musicOn = false; }
+    btn.textContent = '♪ Música: ' + (musicOn ? 'sí' : 'no');
+    btn.setAttribute('aria-pressed', musicOn ? 'true' : 'false');
+  }
+  function chime() {
+    if (!musicOn || !ac) return;
+    var t = ac.currentTime + 0.05;
+    tone('sine', mtof(81), t, 0.9, 0.06);
+    tone('sine', mtof(88), t + 0.18, 1.2, 0.05);
+  }
+  document.getElementById('musicBtn').addEventListener('click', function () { setMusic(!musicOn); });
+
+  /* ================= ESCENA (canvas) ================= */
+
+  var cv = document.getElementById('scene');
+  var ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  var W = 200, H = 100, GY = 80;
+
+  function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  var R = rng(49);
+  var stars = []; for (var i = 0; i < 38; i++) stars.push({ x: Math.floor(R() * W), y: Math.floor(R() * 52), p: R() * 6 });
+  function genCity(span, wMin, wMax, hMin, hMax) {
+    var a = [], x = 0;
+    while (x < span) { var w = wMin + Math.floor(R() * (wMax - wMin)); a.push({ x: x, w: w, h: hMin + Math.floor(R() * (hMax - hMin)), win: Math.floor(R() * 1e6) }); x += w + Math.floor(R() * 3); }
+    return a;
+  }
+  var farCity = genCity(640, 14, 26, 16, 36), nearCity = genCity(800, 10, 20, 10, 26);
+
+  function hex(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+  function lerp(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  function css(c) { return 'rgb(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ')'; }
+  function mix(a, b, t) { return css(lerp(hex(a), hex(b), t)); }
+  function rect(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
+  function disc(cx, cy, r, c) {
+    ctx.fillStyle = c;
+    for (var dy = -r; dy <= r; dy++) { var dx = Math.floor(Math.sqrt(r * r - dy * dy)); ctx.fillRect(Math.round(cx - dx), Math.round(cy + dy), dx * 2 + 1, 1); }
+  }
+  function mod(a, n) { return ((a % n) + n) % n; }
+
+  var DIG = { 0: '111101101101111', 1: '010110010010111', 2: '111001111100111', 3: '111001111001111', 4: '101101111001001', 5: '111100111001111', 6: '111100111101111', 7: '111001001001001', 8: '111101111101111', 9: '111101111001111' };
+  function num(str, x, y, c) {
+    for (var i = 0; i < str.length; i++) {
+      var p = DIG[str[i]];
+      for (var j = 0; j < 15; j++) if (p[j] === '1') rect(x + i * 4 + (j % 3), y + Math.floor(j / 3), 1, 1, c);
+    }
+  }
+
+  function legs(x, y, f, walking, c1, c2, shoe) {
+    var la = walking && f === 0 ? 1 : 0, lb = walking && f === 1 ? 1 : 0;
+    rect(x + 2, y + 16, 3, 5 - la, c1); rect(x + 7, y + 16, 3, 5 - lb, c2 || c1);
+    rect(x + 2, y + 21 - la, 3, 1, shoe); rect(x + 7, y + 21 - lb, 3, 1, shoe);
+  }
+  function drawHim(x, y, f, walking, bob) {
+    var S = '#9a6743', HR = '#15100e';
+    legs(x, y, f, walking, '#262a3d', null, '#0c0b12');
+    rect(x + 1, y + 9 + bob, 10, 7, '#f4f1ea');
+    rect(x, y + 10 + bob, 1, 5, S); rect(x + 11, y + 10 + bob, 1, 5, S);
+    rect(x + 3, y + 12 + bob, 6, 2, '#2b2b36');
+    rect(x + 5, y + 8 + bob, 2, 1, S);
+    rect(x + 3, y + 3 + bob, 6, 5, S);
+    rect(x + 4, y + 5 + bob, 1, 1, '#120d0b'); rect(x + 7, y + 5 + bob, 1, 1, '#120d0b');
+    rect(x + 5, y + 7 + bob, 2, 1, '#6b412a');
+    rect(x + 2, y + bob, 8, 3, HR); rect(x + 1, y + 1 + bob, 1, 3, HR); rect(x + 10, y + 1 + bob, 1, 3, HR);
+    rect(x + 3, y - 1 + bob, 2, 1, HR); rect(x + 6, y - 1 + bob, 3, 1, HR);
+  }
+  function drawHer(x, y, f, walking, bob) {
+    var S = '#d09a72', HK = '#130e18', BL = '#2f9fe0', BL2 = '#1b6fb5';
+    legs(x, y, f, walking, '#2c4a7a', null, '#0c0b12');
+    rect(x + 1, y + 3 + bob, 2, 13, HK); rect(x + 9, y + 3 + bob, 2, 13, HK);
+    rect(x + 3, y + 9 + bob, 6, 6, '#b3182e');
+    rect(x + 2, y + 9 + bob, 1, 2, '#b3182e'); rect(x + 9, y + 9 + bob, 1, 2, '#b3182e');
+    rect(x + 2, y + 11 + bob, 1, 3, S); rect(x + 9, y + 11 + bob, 1, 3, S);
+    rect(x + 5, y + 8 + bob, 2, 1, S);
+    rect(x + 3, y + 3 + bob, 6, 5, S);
+    rect(x + 4, y + 5 + bob, 1, 1, '#120d0b'); rect(x + 7, y + 5 + bob, 1, 1, '#120d0b');
+    rect(x + 5, y + 7 + bob, 2, 1, '#c8283c');
+    rect(x + 3, y + 4 + bob, 1, 1, '#dfe8f0');
+    rect(x + 1, y + bob, 10, 4, HK);
+    rect(x + 2, y + 1 + bob, 1, 9, BL); rect(x + 3, y + bob, 2, 1, BL); rect(x + 1, y + 6 + bob, 1, 5, BL2);
+    rect(x + 9, y + 4 + bob, 1, 6, BL2);
+  }
+
+  function drawLamp(sx, lit, glowT, n, t) {
+    var base = GY + 5;
+    rect(sx, base - 26, 1, 26, '#07061a');
+    rect(sx - 2, base - 30, 5, 4, lit ? '#ffe3a1' : '#3a3a66');
+    rect(sx - 3, base - 31, 7, 1, '#07061a');
+    if (lit) {
+      var a = 0.10 + 0.03 * Math.sin(t / 500 + n);
+      ctx.fillStyle = 'rgba(255,196,110,' + a + ')';
+      ctx.fillRect(sx - 9, base - 38, 19, 20); ctx.fillRect(sx - 6, base - 35, 13, 14); ctx.fillRect(sx - 14, base - 6, 29, 5);
+    }
+    var s = String(n), w = s.length * 4 - 1;
+    num(s, sx - Math.floor(w / 2), base - 40, lit ? '#ffe3a1' : '#6f6aa8');
+  }
+  function drawDoor(sx, n) {
+    var base = GY + 5;
+    rect(sx - 7, base - 24, 14, 24, '#2a1c2e'); rect(sx - 6, base - 23, 12, 23, '#5b3a29');
+    rect(sx - 4, base - 20, 8, 8, '#4a2e20'); rect(sx - 4, base - 10, 8, 8, '#4a2e20');
+    rect(sx + 3, base - 12, 2, 2, '#c9a45a');
+    var s = String(n); num(s, sx - 3, base - 32, '#a9a4d4');
+  }
+
+  var last = 0;
+  function frame(ts) {
+    var dt = Math.min(0.05, (ts - last) / 1000); last = ts;
+    if (state.mode === 'walking' && !reduce) {
+      state.charX = Math.min(state.target, state.charX + 90 * dt);
+      state.walkT += dt;
+      if (state.charX >= state.target) arrive();
+    }
+    draw(ts);
+    requestAnimationFrame(frame);
+  }
+
+  function draw(t) {
+    var p = Math.min(1, state.done / N);
+    var cam = state.charX - 100;
+    var walking = state.mode === 'walking';
+    // cielo
+    var tn = hex('#0b1030'), bn = hex('#2b2552'), td = hex('#4a4b8f'), bd = hex('#f2a679');
+    for (var y = 0; y < GY; y += 4) {
+      var r = y / GY;
+      ctx.fillStyle = css(lerp(lerp(tn, bn, r), lerp(td, bd, r), p));
+      ctx.fillRect(0, y, W, 4);
+    }
+    // estrellas
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      ctx.globalAlpha = (1 - p) * (0.45 + 0.55 * Math.sin(t / 420 + s.p));
+      rect(s.x, s.y, 1, 1, '#fff6dc');
+    }
+    ctx.globalAlpha = 1;
+    // luna y sol
+    ctx.globalAlpha = 1 - p * 0.9; disc(162, 20, 7, '#efe9c4'); ctx.globalAlpha = 1;
+    if (p > 0.5) disc(140, GY - ((p - 0.5) / 0.5) * 26 + 8, 9, '#ffd27a');
+    // ciudad lejana y cercana
+    var farC = mix('#1b1944', '#74558c', p), nearC = mix('#120f2b', '#46335f', p);
+    [[farCity, 640, 0.2, farC, false], [nearCity, 800, 0.5, nearC, true]].forEach(function (L) {
+      var arr = L[0], span = L[1], f = L[2];
+      for (var k = 0; k < arr.length; k++) {
+        var b = arr[k], x0 = mod(b.x - cam * f, span);
+        [x0, x0 - span].forEach(function (xx) {
+          if (xx > W || xx + b.w < 0) return;
+          rect(xx, GY - b.h, b.w, b.h, L[3]);
+          if (L[4]) {
+            ctx.globalAlpha = 1 - p * 0.85;
+            for (var wy = 0; wy < b.h - 3; wy += 4) for (var wx = 1; wx < b.w - 1; wx += 3) if (((b.win >> ((wy / 4 + wx) % 20)) & 1)) rect(xx + wx, GY - b.h + 2 + wy, 1, 2, '#ffd98a');
+            ctx.globalAlpha = 1;
+          }
+        });
+      }
+    });
+    // suelo y camino
+    rect(0, GY, W, H - GY, mix('#171233', '#2f2650', p));
+    rect(0, GY, W, 1, mix('#0a0820', '#1d1635', p));
+    rect(0, GY + 4, W, 16, mix('#262050', '#5b476f', p));
+    var dash = mix('#3a3275', '#836b92', p);
+    for (var dx = -mod(cam, 20); dx < W; dx += 20) rect(dx, GY + 12, 9, 1, dash);
+    // farolas y puertas
+    for (var k2 = 0; k2 < N; k2++) { var sx = Math.round(stationX(k2) - cam); if (sx > -20 && sx < W + 20) drawLamp(sx, k2 < state.done, 0, k2 + 1, t); }
+    var d1 = Math.round(stationX(N) + 6 - cam), d2 = Math.round(stationX(N) + 32 - cam);
+    if (d1 > -20 && d1 < W + 20) drawDoor(d1, 48);
+    if (d2 > -20 && d2 < W + 20) drawDoor(d2, 49);
+    // personajes
+    var f = walking ? Math.floor(state.walkT * 6) % 2 : 0;
+    var bob = walking ? (f ? -1 : 0) : (Math.floor(t / 700) % 2 ? -1 : 0) * 0;
+    var fy = GY + 10 - 22;
+    drawHim(76, fy, f, walking, bob);
+    drawHer(100, fy, (f + 1) % 2, walking, bob);
+  }
+
+  /* ================= ARRANQUE ================= */
+
+  renderTitle();
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
